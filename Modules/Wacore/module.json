@@ -1,0 +1,97 @@
+{
+    "name": "Wacore",
+    "alias": "wacore",
+    "module_type": "features",
+    "module_key": "",
+    "description": "",
+    "modules_core_name": "Wacore",
+    "version": 1,
+    "status": true,
+    "status_updatable": false,
+    "keywords": [],
+    "priority": 0,
+    "user_menu": [
+        {
+            "name": "Dashboard",
+            "icon": "fi fi-rs-dashboard",
+            "route": "user.dashboard.index",
+            "route_type": "route",
+            "request": "user\/dashboard*"
+        },
+        {
+            "name": "My Devices",
+            "icon": "fi-rs-sensor-on",
+            "route": "user.device.index",
+            "route_type": "route",
+            "request": "user\/device*"
+        },
+        {
+            "name": "Templates",
+            "icon": "fi  fi-rs-template-alt",
+            "route": "user\/template",
+            "route_type": "url",
+            "request": "user\/template*"
+        },
+        {
+            "name": "Single Send",
+            "icon": "fi fi-rs-paper-plane",
+            "route": "user\/sent-text-message",
+            "route_type": "url",
+            "request": "user\/sent-text-message*"
+        },
+        {
+            "name": "Chatbot (Auto Reply)",
+            "icon": "fas fa-robot",
+            "route": "user.chatbot.index",
+            "route_type": "route",
+            "request": "user\/chatbot*"
+        },
+        {
+            "name": "My Apps",
+            "icon": "fas fa-cube",
+            "route": "user.apps.index",
+            "route_type": "route",
+            "request": "user\/apps*"
+        },
+        {
+            "name": "Contact Book",
+            "icon": "fi  fi-rs-address-book",
+            "route": "user\/contact",
+            "route_type": "url",
+            "request": "user\/contact*"
+        },
+        {
+            "name": "Send Bulk Message",
+            "icon": "fi fi-rs-rocket-lunch",
+            "route": "user\/bulk-message",
+            "route_type": "url",
+            "request": "user\/bulk-message*"
+        },
+        {
+            "name": "Scheduled Message",
+            "icon": "ni ni-calendar-grid-58",
+            "route": "user\/schedule-message",
+            "route_type": "url",
+            "request": "user\/schedule-message*"
+        },
+        {
+            "name": "Message Log",
+            "icon": "ni ni-ui-04",
+            "route": "user\/logs",
+            "route_type": "url",
+            "request": "user\/logs*"
+        },
+        {
+            "name": "Webhook Logs",
+            "icon": "fi fi-rs-chart-connected",
+            "route": "user\/webhooks",
+            "route_type": "url",
+            "request": "user\/webhooks*"
+        }
+    ],
+    "admin_menu": [],
+    "providers": [
+        "Modules\\Wacore\\Providers\\WacoreServiceProvider"
+    ],
+    "files": []
+}

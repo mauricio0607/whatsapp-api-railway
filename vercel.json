@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/test/(.*)",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/sessions/(.*)",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/chats/(.*)",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/groups/(.*)",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/app.js"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "API_SECRET": "dev-api-key-local-testing"
+  },
+  "public": true
+}

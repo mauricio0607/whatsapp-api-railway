@@ -1,0 +1,81 @@
+# Railway ignore file
+# Arquivos e pastas que não devem ser enviados para o Railway
+
+# Laravel files (não necessários para a API Node.js)
+app/
+bootstrap/
+config/
+database/
+lang/
+public/
+resources/
+routes/
+storage/
+vendor/
+Modules/
+
+# PHP files
+*.php
+composer.json
+composer.lock
+artisan
+phpunit.xml
+
+# Development files
+.env.example
+.env.backup*
+.env.production*
+.env.local
+.env.development
+.trae/
+tests/
+stubs/
+
+# Documentation
+*.md
+DEPLOY_*.md
+GUIA_*.md
+CONFIGURACAO_*.md
+RESUMO_*.md
+SOLUCAO_*.md
+TESTE_*.md
+ENDPOINTS_*.md
+
+# Test files
+test-*.php
+test-*.html
+teste-*.html
+debug-*.php
+
+# Vercel specific
+whatsapp-api-vercel/
+whatsapp-api-ultra-simple/
+whatsapp-api-simple/
+whatsapp-api/
+.vercel/
+vercel.json
+
+# Temporary files
+sessions/
+temp/
+uploads/
+*.log
+*.tmp
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Other
+*.zip
+favicon.ico
+robots.txt

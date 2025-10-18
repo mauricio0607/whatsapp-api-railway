@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/api/test/qr?format=html",
+      "permanent": false
+    }
+  ]
+}

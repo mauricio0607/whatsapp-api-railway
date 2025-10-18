@@ -1,0 +1,419 @@
+<?php
+
+namespace Modules\Wacore\Http\Controllers\User;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Device;
+use App\Models\Reply;
+use App\Models\Smstransaction;
+use App\Models\Template;
+use App\Models\User;
+use DB;
+use Auth;
+use Http;
+use Session;
+use Carbon\Carbon;
+use App\Traits\Whatsapp;
+class DeviceController extends Controller
+{
+    use Whatsapp;
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $devices=Device::where('user_id',Auth::id())->withCount('smstransaction')->latest()->paginate(20);
+        return view('wacore::user.device.index',compact('devices'));
+    }
+
+    /**
+     * return device statics informations
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function deviceStatics()
+    {
+       $data['total']=Device::where('user_id',Auth::id())->count();
+       $data['active']=Device::where('user_id',Auth::id())->where('status',1)->count();
+       $data['inActive']=Device::where('user_id',Auth::id())->where('status',0)->count();
+       $limit  = json_decode(Auth::user()->plan);
+       $limit = $limit->device_limit ?? 0;
+
+       if ($limit == '-1') {
+           $data['total']= $data['total'];
+       }
+       else{
+         $data['total']= $data['total'].' / '. $limit;
+       }
+       
+       
+       return response()->json($data);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        return view('wacore::user.device.create');
+    }
+
+    
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+       
+        if (getUserPlanData('device_limit') == false) {
+            return response()->json([
+                'message'=>__('Maximum Device Limit Exceeded')
+            ],401);  
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|max:100',
+            'webhook_url' => 'nullable|url|max:100',
+        ]);
+
+        $device=new Device;
+        $device->user_id=Auth::id();
+        $device->name=$request->name;
+        $device->hook_url=$request->webhook_url;
+        $device->save();
+
+        return response()->json([
+            'redirect'=>url('user/device/'.$device->uuid.'/qr'),
+            'message'=>__('Device Created Successfully')
+        ],200);
+    }
+
+    public function scanQr($id)
+    {
+        $device=Device::where('user_id',Auth::id())->where('uuid',$id)->first();
+        abort_if(empty($device),404);
+
+        return view('wacore::user.device.qr',compact('device'));
+
+    }
+
+    public function getQr($id)
+    {
+        $device=Device::where('user_id',Auth::id())->where('uuid',$id)->first();
+        abort_if(empty($device),404);
+
+        // Usar API Vercel para gerar QR code
+        $response = Http::withHeaders([
+            'bypass-tunnel-reminder' => 'true',
+            'User-Agent' => 'WhatsApp-Laravel-Client/1.0'
+        ])->get(env('WA_SERVER_URL').'/test/qr');
+
+        if ($response->status() == 200) {
+            $body = json_decode($response->body());
+            
+            // Verificar se a resposta tem o formato esperado da API Vercel
+            if (isset($body->success) && $body->success && isset($body->data->qr)) {
+                $qrCode = $body->data->qr;
+                $sessionId = $body->data->sessionId; // Salvar o sessionId gerado pela API
+                
+                $data['qr'] = $qrCode;
+                $data['message'] = $body->message ?? __('QR code generated successfully');
+                
+                // Salvar QR code e sessionId no banco
+                $device->qr = $qrCode;
+                $device->session_id = $sessionId; // Salvar o sessionId real da API
+                $device->save();
+
+                return response()->json($data);
+            }
+        }
+        
+        // Se falhar, tentar usar QR code salvo anteriormente
+        if (!empty($device->qr)) {
+            $data['qr'] = $device->qr;
+            $data['message'] = __('QR code received, please scan the QR code');
+            return response()->json($data);
+        }
+        
+        // Se não conseguir gerar nem recuperar QR code
+        return response()->json([
+            'error' => 'Failed to generate QR code',
+            'message' => __('Unable to generate QR code. Please try again.')
+        ], 500);
+    }
+
+    public function checkSession($id)
+    {
+       $device=Device::where('user_id',Auth::id())->where('uuid',$id)->first();
+       abort_if(empty($device),404);
+
+       // Verificar se temos um sessionId salvo da API local
+       if (empty($device->session_id)) {
+           return response()->json([
+               'message' => __('No session found. Please generate QR code first.'),
+               'connected' => false
+           ]);
+       }
+
+       // Usar API Vercel para verificar status da sessão
+       $sessionId = $device->session_id;
+       $response = Http::withHeaders([
+           'bypass-tunnel-reminder' => 'true',
+           'User-Agent' => 'WhatsApp-Laravel-Client/1.0'
+       ])->get(env('WA_SERVER_URL').'/test/status/'.$sessionId);
+
+       $isConnected = false;
+       
+       if ($response->status() == 200) {
+           $res = json_decode($response->body());
+           
+           // Verificar se a sessão está conectada na API Vercel
+           if (isset($res->success) && $res->success && isset($res->data)) {
+               $sessionData = $res->data;
+               $isConnected = isset($sessionData->status) && $sessionData->status === 'authenticated';
+               
+               if ($isConnected && isset($sessionData->user)) {
+                   $device->user_name = $sessionData->user->name ?? '';
+                   $phone = str_replace('@s.whatsapp.net', '', $sessionData->user->id ?? '');
+                   $phone = explode(':', $phone);
+                   $phone = $phone[0] ?? null;
+
+                   $device->phone = $phone;
+                   $device->qr = null; // Limpar QR code quando conectado
+               }
+           }
+       }
+       
+       $device->status = $isConnected ? 1 : 0;         
+       $device->save();
+
+       $message = $isConnected ? __('Device Connected Successfully') : null;
+
+       return response()->json([
+           'message' => $message,
+           'connected' => $isConnected
+       ]);
+    }
+
+    public function setStatus($device_id,$status)
+    {
+
+       $device_id=str_replace('device_','',$device_id);
+
+       $device=Device::where('id',$device_id)->first();
+       if (!empty($device)) {
+          $device->status=$status;
+          $device->save();
+       }
+
+
+    }
+
+    public function webHook(Request $request,$device_id)
+    {
+       
+       $session=$device_id;
+       $device_id=str_replace('device_','',$device_id);
+
+       $device=Device::with('user')->whereHas('user')->where('id',$device_id)->first();
+       if (empty($device)) {
+        return response()->json([
+            'message'  => array('text' => 'this is reply'),
+            'receiver' => $request->from,
+            'session_id' => $session
+          ],403);
+       }
+       
+       if (getUserPlanData('chatbot',$device->user_id) == false) {
+            return response()->json([
+             'message'  => array('text' => 'this is reply'),
+             'receiver' => $request->from,
+             'session_id' => $session
+            ],401);  
+        }
+
+       $request_from=explode('@',$request->from);
+       $request_from=$request_from[0];
+
+       $message_id=$request->message_id ?? null;
+       $message=$request->message ?? null;
+       $device_id=$device_id;
+
+      
+       if (strlen($message) < 50 && $device != null && $message != null) {
+          $replies=Reply::where('device_id',$device_id)->with('template')->where('keyword','LIKE','%'.$message.'%')->latest()->get();
+
+          foreach ($replies as $key => $reply) {
+            if ($reply->match_type == 'equal') {
+
+                if ($reply->reply_type == 'text') {
+                 
+                 return response()->json([
+                    'message'  => array('text' => $reply->reply),
+                    'receiver' => $request->from,
+                    'session_id' => $session
+                  ],200);
+
+                 
+                }
+                else{
+                    if (!empty($reply->template)) {
+                        $template = $reply->template;
+
+                        if (isset($template->body['text'])) {
+                            $body = $template->body;
+                            $text=$this->formatText($template->body['text'],[],$device->user);
+                            $body['text'] = $text;
+                            
+                        }
+                        else{
+                            $body=$template->body;
+                        }
+
+                        return response()->json([
+                            'message'  => $body,
+                            'receiver' => $request->from,
+                            'session_id' => $session
+                        ],200);
+                    }
+                    
+                }
+
+                break;
+                
+            }
+
+          }
+
+
+       }
+       
+
+       return response()->json([
+            'message'  => array('text' => 'this is reply'),
+            'receiver' => $request->from,
+            'session_id' => $session
+          ],403);
+       
+    }
+
+    public function logoutSession($id)
+    {
+       $device=Device::where('user_id',Auth::id())->where('uuid',$id)->first();
+       abort_if(empty($device),404);
+
+       $device->status=0;
+       $device->qr=null;
+       $device->save();
+
+       $id=$device->id;
+       $response=Http::withHeaders([
+           'bypass-tunnel-reminder' => 'true'
+       ])->delete(env('WA_SERVER_URL').'/sessions/delete/device_'.$id);
+
+      return response()->json(['message'=>__('Congratulations! Your Device Successfully Logout')]);
+
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        $device=Device::where('user_id',Auth::id())->where('uuid',$id)->first();
+        abort_if(empty($device),404);
+
+        $posts=Smstransaction::where('user_id',Auth::id())->where('device_id',$device->id)->latest()->paginate();
+        $totalUsed=Smstransaction::where('user_id',Auth::id())->where('device_id',$device->id)->count();
+        $todaysMessage=Smstransaction::where('user_id',Auth::id())->where('device_id',$device->id)->whereDate('created_at',Carbon::today())->count();
+        $monthlyMessages=Smstransaction::where('user_id',Auth::id())
+                        ->where('device_id',$device->id)
+                        ->where('created_at', '>', now()->subDays(30)->endOfDay())
+                        ->count();
+
+
+        return view('wacore::user.device.show',compact('device','posts','totalUsed','todaysMessage','monthlyMessages'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $device=Device::where('user_id',Auth::id())->where('uuid',$id)->first();
+        abort_if(empty($device),404);
+        return view('wacore::user.device.edit',compact('device'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => 'required|max:100',
+            'webhook_url' => 'nullable|url|max:100',
+        ]);
+
+        $device=Device::where('user_id',Auth::id())->where('uuid',$id)->first();
+        abort_if(empty($device),404);
+
+        $device->name=$request->name;
+        $device->hook_url=$request->webhook_url;
+        $device->save();
+
+        return response()->json([
+            'redirect'=>url('/user/device'),
+            'message'=>__('Device Updated Successfully')
+        ],200);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        $device=Device::where('user_id',Auth::id())->where('uuid',$id)->first();
+        abort_if(empty($device),404);
+        try {
+           if ($device->status == 1) {
+            Http::withHeaders([
+                'bypass-tunnel-reminder' => 'true'
+            ])->delete(env('WA_SERVER_URL').'/sessions/delete/device_'.$device->id);
+         }
+        } catch (Exception $e) {
+            
+        }
+        $device->delete();
+
+        return response()->json([
+            'message' => __('Congratulations! Your Device Successfully Removed'),
+            'redirect' => route('user.device.index')
+        ]);
+       
+    }
+}

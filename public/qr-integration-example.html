@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Integração QR Code - Exemplo</title>
+    <style>
+        .qr-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .qr-container {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .qr-container img {
+            max-width: 250px;
+            border: 2px solid #25D366;
+            border-radius: 8px;
+        }
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .btn-whatsapp:hover {
+            background: #128C7E;
+        }
+        .status-message {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="qr-section">
+        <h3>📱 Conectar WhatsApp</h3>
+        <p>Clique no botão abaixo para gerar um QR Code e conectar seu WhatsApp</p>
+        
+        <button class="btn-whatsapp" onclick="conectarWhatsApp()">
+            📱 Conectar WhatsApp
+        </button>
+        
+        <div id="statusMessage" class="status-message"></div>
+        
+        <div id="qrContainer" class="qr-container">
+            <h4>📱 Escaneie este QR Code</h4>
+            <img id="qrImage" src="" alt="QR Code WhatsApp">
+            <p><strong>Sessão:</strong> <span id="sessionId"></span></p>
+            <p style="color: #666; font-size: 14px;">QR Code expira em 5 minutos</p>
+        </div>
+    </div>
+
+    <script>
+        // Função principal para conectar WhatsApp
+        async function conectarWhatsApp() {
+            mostrarStatus('⏳ Gerando QR Code...', 'loading');
+            esconderQR();
+            
+            try {
+                // Fazer requisição para seu endpoint Laravel
+                const response = await fetch('/test/vercel/qr-code', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success' && data.data && data.data.data && data.data.data.qrCode) {
+                    // Sucesso - mostrar QR code
+                    const qrData = data.data.data;
+                    mostrarQR(qrData.qrCode, qrData.sessionId);
+                    mostrarStatus('✅ QR Code gerado! Escaneie com seu WhatsApp', 'success');
+                    
+                    // Auto-refresh em 4 minutos
+                    setTimeout(() => {
+                        mostrarStatus('⚠️ QR Code expirando... Clique em "Conectar WhatsApp" para renovar', 'error');
+                    }, 240000);
+                    
+                } else {
+                    mostrarStatus('❌ Erro ao gerar QR Code: ' + (data.message || 'Resposta inválida'), 'error');
+                }
+            } catch (error) {
+                mostrarStatus('❌ Erro de conexão: ' + error.message, 'error');
+            }
+        }
+
+        // Função para mostrar o QR code
+        function mostrarQR(qrCodeBase64, sessionId) {
+            document.getElementById('qrImage').src = qrCodeBase64;
+            document.getElementById('sessionId').textContent = sessionId;
+            document.getElementById('qrContainer').style.display = 'block';
+        }
+
+        // Função para esconder o QR code
+        function esconderQR() {
+            document.getElementById('qrContainer').style.display = 'none';
+        }
+
+        // Função para mostrar mensagens de status
+        function mostrarStatus(mensagem, tipo) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = mensagem;
+            statusEl.className = `status-message ${tipo}`;
+            statusEl.style.display = 'block';
+        }
+
+        // Função para verificar status da conexão (opcional)
+        async function verificarStatus() {
+            try {
+                const response = await fetch('/test/vercel/sessions', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    console.log('Status da conexão:', data);
+                    return data;
+                }
+            } catch (error) {
+                console.error('Erro ao verificar status:', error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+# Dependências e cache
+node_modules
+vendor
+storage/logs
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+bootstrap/cache
+
+# Arquivos de desenvolvimento
+.env.local
+.env.development
+.env.test
+.env.production
+.git
+.gitignore
+.editorconfig
+.eslintrc.json
+.prettierignore
+.prettierrc
+
+# Arquivos de build e temporários
+*.log
+*.tmp
+*.temp
+sessions
+auth
+
+# Arquivos específicos do Laravel
+public/storage
+storage/app/public
+
+# Arquivos grandes
+whats.zip
+*.zip
+*.tar.gz
+
+# Documentação
+README.md
+TESTE_LOCAL.md
+*.md
+
+# Testes
+tests
+phpunit.xml
+
+# Outros
+.trae
+debug-session.php
+test-*.php
+test-*.html
+teste-*.html

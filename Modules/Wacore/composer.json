@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/wacore",
+    "description": "",
+    "authors": [
+        {
+            "name": "AMCoders",
+            "email": "help.amcoders@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Wacore\\": "app/",
+            "Modules\\Wacore\\Database\\Factories\\": "database/factories/",
+            "Modules\\Wacore\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Wacore\\Tests\\": "tests/"
+        }
+    }
+}

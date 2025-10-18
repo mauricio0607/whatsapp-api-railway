@@ -1,0 +1,65 @@
+{
+  "name": "whatsapp-api-final",
+  "version": "1.0.0",
+  "description": "WhatsApp API serverless para Vercel usando Baileys",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build completed'",
+    "start": "vercel dev",
+    "deploy": "vercel --prod",
+    "deploy-preview": "vercel",
+    "test": "node test/test-api.js",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "whatsapp",
+    "api",
+    "baileys",
+    "vercel",
+    "serverless",
+    "nodejs",
+    "webhook"
+  ],
+  "author": "WhatsApp API Team",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.6.0",
+    "qrcode": "^1.5.3",
+    "qrcode-terminal": "^0.12.0",
+    "pino": "^8.17.2",
+    "node-cache": "^5.1.2",
+    "axios": "^1.6.5",
+    "form-data": "^4.0.0",
+    "mime-types": "^2.1.35",
+    "sharp": "^0.33.2",
+    "uuid": "^9.0.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.21",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/whatsapp-api-vercel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/whatsapp-api-vercel/issues"
+  },
+  "homepage": "https://github.com/your-username/whatsapp-api-vercel#readme",
+  "vercel": {
+    "functions": {
+      "api/**/*.js": {
+        "runtime": "@vercel/node"
+      }
+    }
+  }
+}

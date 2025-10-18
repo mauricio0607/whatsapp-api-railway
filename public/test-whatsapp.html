@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Teste WhatsApp QR Code - Hospedagem</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            color: #25D366;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .success {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .error {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        .info {
+            background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+        .warning {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+        .button {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+        }
+        .button:hover {
+            background: linear-gradient(135deg, #128C7E, #075E54);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+        .qr-container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .qr-container img {
+            max-width: 300px;
+            border: 3px solid #25D366;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .instructions {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 5px solid #25D366;
+        }
+        .instructions h3 {
+            color: #25D366;
+            margin-top: 0;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        .config-info {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #2196F3;
+        }
+        .config-info h3 {
+            color: #1976D2;
+            margin-top: 0;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .button-group {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Teste WhatsApp QR Code</h1>
+        
+        <div class="config-info">
+            <h3>📋 Configuração:</h3>
+            <p><strong>URL da API:</strong> <span id="api-url">https://whatsapp-api-ultra-simple.vercel.app</span></p>
+            <p><strong>Domínio:</strong> <span id="domain">startzap.comporhub.com</span></p>
+            <p><strong>Status:</strong> <span id="connection-status">Verificando...</span></p>
+        </div>
+        
+        <div id="status" class="status info">
+            ⏳ Aguardando teste...
+        </div>
+
+        <div class="button-group">
+            <button class="button" onclick="testarConexao()">🔍 Testar Conexão</button>
+            <button class="button" onclick="gerarQR()">📱 Gerar QR Code</button>
+            <button class="button" onclick="limparLog()">🗑️ Limpar Log</button>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            ⏳ Carregando...
+        </div>
+
+        <div id="qrContainer" class="qr-container" style="display: none;">
+            <h3 style="color: #333; margin-bottom: 20px;">📱 Escaneie este QR Code</h3>
+            <img id="qrImage" src="" alt="QR Code WhatsApp">
+            <p style="color: #666; margin-top: 15px;">
+                <strong>Sessão:</strong> <span id="sessionId"></span>
+            </p>
+            <p style="color: #999; font-size: 14px;">
+                QR Code expira em 5 minutos
+            </p>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Como Conectar:</h3>
+            <ol>
+                <li><strong>Teste a Conexão:</strong> Clique em "Testar Conexão" para verificar se a API está funcionando</li>
+                <li><strong>Gere o QR Code:</strong> Clique em "Gerar QR Code"</li>
+                <li><strong>Abra o WhatsApp:</strong> No seu celular, abra o WhatsApp</li>
+                <li><strong>Acesse Aparelhos Conectados:</strong> Vá em Configurações → Aparelhos conectados</li>
+                <li><strong>Conecte um Aparelho:</strong> Toque em "Conectar um aparelho"</li>
+                <li><strong>Escaneie o QR:</strong> Use a câmera para escanear o QR code que apareceu acima</li>
+                <li><strong>Aguarde:</strong> O WhatsApp será conectado automaticamente</li>
+            </ol>
+        </div>
+
+        <div id="log" class="log"></div>
+
+        <div class="footer">
+            <p>🔧 Página de teste independente - Funciona sem rotas Laravel</p>
+            <p>📅 Gerado em: <span id="timestamp"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // Configuração da API
+        const API_URL = 'https://whatsapp-api-ultra-simple.vercel.app';
+        let currentSessionId = null;
+
+        // Função para log
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const typeIcon = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️'
+            };
+            
+            logElement.textContent += `[${timestamp}] ${typeIcon[type] || 'ℹ️'} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // Função para atualizar status
+        function setStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        // Função para mostrar/esconder loading
+        function showLoading(show, message = '⏳ Carregando...') {
+            const loading = document.getElementById('loading');
+            if (show) {
+                loading.style.display = 'block';
+                loading.textContent = message;
+            } else {
+                loading.style.display = 'none';
+            }
+        }
+
+        // Função para limpar log
+        function limparLog() {
+            document.getElementById('log').textContent = '';
+            log('Log limpo', 'info');
+        }
+
+        // Função para testar conexão
+        async function testarConexao() {
+            log('🔄 Iniciando teste de conexão...', 'info');
+            setStatus('🔄 Testando conexão com a API...', 'info');
+            showLoading(true, '⏳ Testando conexão...');
+            
+            try {
+                const response = await fetch(`${API_URL}/api`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                showLoading(false);
+                log(`📡 Status da resposta: ${response.status}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ API funcionando! Versão: ${data.version}`, 'success');
+                    setStatus('✅ Conexão com a API estabelecida com sucesso!', 'success');
+                    document.getElementById('connection-status').textContent = 'Conectado ✅';
+                    
+                    // Mostrar endpoints disponíveis
+                    if (data.available_endpoints) {
+                        log('📋 Endpoints disponíveis:', 'info');
+                        data.available_endpoints.forEach(endpoint => {
+                            log(`   • ${endpoint}`, 'info');
+                        });
+                    }
+                } else {
+                    log(`❌ Erro na API: ${response.status} - ${response.statusText}`, 'error');
+                    setStatus(`❌ Erro na API: ${response.status}`, 'error');
+                    document.getElementById('connection-status').textContent = 'Erro ❌';
+                }
+            } catch (error) {
+                showLoading(false);
+                log(`💥 Erro de conexão: ${error.message}`, 'error');
+                setStatus(`💥 Erro de conexão: ${error.message}`, 'error');
+                document.getElementById('connection-status').textContent = 'Desconectado ❌';
+                
+                if (error.message.includes('CORS')) {
+                    log('🚨 PROBLEMA DE CORS DETECTADO!', 'error');
+                    log('💡 Solução: Verificar configuração CORS da API', 'warning');
+                }
+            }
+        }
+
+        // Função para gerar QR Code
+        async function gerarQR() {
+            log('📱 Iniciando geração de QR Code...', 'info');
+            setStatus('📱 Gerando QR Code...', 'info');
+            showLoading(true, '⏳ Gerando QR Code...');
+            
+            const qrContainer = document.getElementById('qrContainer');
+            const qrImage = document.getElementById('qrImage');
+            const sessionIdSpan = document.getElementById('sessionId');
+            
+            // Esconder QR anterior
+            qrContainer.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/test/qr`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                showLoading(false);
+                log(`📡 Status da resposta QR: ${response.status}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ QR Code recebido: ${data.message}`, 'success');
+                    
+                    if (data.data && data.data.qrCode) {
+                        currentSessionId = data.data.sessionId;
+                        
+                        // Mostrar QR code
+                        qrImage.src = data.data.qrCode;
+                        sessionIdSpan.textContent = currentSessionId;
+                        qrContainer.style.display = 'block';
+                        
+                        setStatus('✅ QR Code gerado com sucesso! Escaneie com seu WhatsApp.', 'success');
+                        log(`📱 Session ID: ${currentSessionId}`, 'success');
+                        log(`⏰ QR Code expira em: ${data.data.expiresIn} segundos`, 'warning');
+                        
+                        // Auto-refresh do QR code em 4 minutos
+                        setTimeout(() => {
+                            log('🔄 QR Code expirando em 1 minuto...', 'warning');
+                            setStatus('⚠️ QR Code expirando em breve. Clique em "Gerar QR Code" para renovar.', 'warning');
+                        }, 240000); // 4 minutos
+                        
+                    } else {
+                        log('❌ QR Code não encontrado na resposta', 'error');
+                        setStatus('❌ Erro: QR Code não encontrado na resposta', 'error');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Erro ao gerar QR: ${response.status} - ${errorText}`, 'error');
+                    setStatus(`❌ Erro ao gerar QR: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showLoading(false);
+                log(`💥 Erro ao gerar QR: ${error.message}`, 'error');
+                setStatus(`💥 Erro ao gerar QR: ${error.message}`, 'error');
+            }
+        }
+
+        // Inicialização da página
+        window.addEventListener('load', function() {
+            // Mostrar timestamp
+            document.getElementById('timestamp').textContent = new Date().toLocaleString('pt-BR');
+            
+            // Log inicial
+            log('🚀 Página de teste carregada', 'success');
+            log(`🌐 API URL: ${API_URL}`, 'info');
+            log('💡 Esta página funciona independente das rotas Laravel', 'info');
+            
+            // Teste automático de conexão
+            setTimeout(() => {
+                log('🔄 Iniciando teste automático de conexão...', 'info');
+                testarConexao();
+            }, 1000);
+        });
+
+        // Detectar se está sendo executado na hospedagem
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            document.getElementById('domain').textContent = window.location.hostname;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+# Adicione estas variáveis ao seu arquivo .env do Laravel no Hostinger
+
+# WhatsApp API Configuration - Deploy Híbrido
+WHATSAPP_VERCEL_API_URL=https://sua-api-whatsapp.vercel.app
+WHATSAPP_API_KEY=sua-chave-super-secreta-aqui
+WHATSAPP_TIMEOUT=30
+WHATSAPP_RETRY_ATTEMPTS=3
+WHATSAPP_RETRY_DELAY=1000
+
+# Rate Limiting
+WHATSAPP_RATE_LIMIT_ENABLED=true
+WHATSAPP_RATE_LIMIT_MAX=100
+WHATSAPP_RATE_LIMIT_WINDOW=60
+
+# Logging
+WHATSAPP_LOGGING_ENABLED=true
+WHATSAPP_LOG_LEVEL=info
+WHATSAPP_LOG_CHANNEL=single
+
+# Session Configuration
+WHATSAPP_AUTO_CONNECT=true
+WHATSAPP_QR_TIMEOUT=60
+WHATSAPP_RECONNECT_ATTEMPTS=5
+
+# Message Configuration
+WHATSAPP_MESSAGE_DELAY=1000
+WHATSAPP_MESSAGE_MAX_RETRIES=3
+WHATSAPP_MESSAGE_CHUNK_SIZE=50
+
+# Media Configuration
+WHATSAPP_MEDIA_MAX_SIZE=16777216
+WHATSAPP_MEDIA_UPLOAD_PATH=uploads/whatsapp
+
+# Webhook Configuration (opcional)
+WHATSAPP_WEBHOOK_ENABLED=false
+WHATSAPP_WEBHOOK_URL=https://seudominio.com.br/webhook/whatsapp
+WHATSAPP_WEBHOOK_SECRET=sua-chave-webhook-secreta
+
+# Cache Configuration
+WHATSAPP_CACHE_ENABLED=true
+WHATSAPP_CACHE_TTL=3600
+WHATSAPP_CACHE_PREFIX=whatsapp:
+
+# Security Configuration
+WHATSAPP_CORS_ORIGINS=*
+WHATSAPP_ALLOWED_IPS=
+WHATSAPP_ENCRYPTION_KEY=
+
+# Development Configuration
+WHATSAPP_DEBUG=false
+WHATSAPP_MOCK_RESPONSES=false
+WHATSAPP_TEST_MODE=false
+
+# IMPORTANTE: 
+# 1. Substitua 'sua-api-whatsapp.vercel.app' pela URL real da sua API no Vercel
+# 2. Gere uma chave API forte e única para WHATSAPP_API_KEY
+# 3. Configure WHATSAPP_WEBHOOK_URL com o domínio do seu Laravel no Hostinger
+# 4. Mantenha as chaves secretas seguras e não as compartilhe

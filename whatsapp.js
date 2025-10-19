@@ -52,6 +52,34 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 printQRInTerminal: true,
                 logger: pino({ level: 'silent' }),
                 browser: Browsers.ubuntu('Chrome'),
+                connectTimeoutMs: 60000,
+                defaultQueryTimeoutMs: 0,
+                keepAliveIntervalMs: 10000,
+                markOnlineOnConnect: true,
+                syncFullHistory: false,
+                fireInitQueries: true,
+                generateHighQualityLinkPreview: false,
+                patchMessageBeforeSending: (message) => {
+                    const requiresPatch = !!(
+                        message.buttonsMessage ||
+                        message.templateMessage ||
+                        message.listMessage
+                    );
+                    if (requiresPatch) {
+                        message = {
+                            viewOnceMessage: {
+                                message: {
+                                    messageContextInfo: {
+                                        deviceListMetadataVersion: 2,
+                                        deviceListMetadata: {},
+                                    },
+                                    ...message,
+                                },
+                            },
+                        };
+                    }
+                    return message;
+                },
             })
 
             sessions.set(sessionId, { ...sock, isLegacy })
@@ -59,13 +87,36 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
             sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update
                 
+                console.log(`🔄 Connection update for ${sessionId}:`, { connection, qr: !!qr })
+                
                 if (qr) {
                     try {
-                        const qrDataURL = await toDataURL(qr)
+                        const qrDataURL = await toDataURL(qr, { 
+                            errorCorrectionLevel: 'M',
+                            type: 'image/png',
+                            quality: 0.92,
+                            margin: 1,
+                            color: {
+                                dark: '#000000',
+                                light: '#FFFFFF'
+                            }
+                        })
                         console.log('✅ QR code gerado com sucesso para sessão:', sessionId)
+                        console.log('📱 QR Code válido por 60 segundos. Escaneie rapidamente!')
                         
                         if (res) {
-                            response(res, 200, true, 'QR code generated', { qr: qrDataURL })
+                            response(res, 200, true, 'QR code generated', { 
+                                qr: qrDataURL,
+                                sessionId,
+                                expiresIn: 60,
+                                instructions: [
+                                    '1. Abra o WhatsApp no seu celular',
+                                    '2. Vá em Configurações > Aparelhos conectados',
+                                    '3. Toque em "Conectar um aparelho"',
+                                    '4. Escaneie o QR code rapidamente (60s)',
+                                    '5. Aguarde a confirmação de conexão'
+                                ]
+                            })
                         }
                         
                         resolve({
@@ -85,29 +136,42 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 }
                 
                 if (connection === 'close') {
-                    const shouldReconnectSession = shouldReconnect(sessionId)
+                    const statusCode = lastDisconnect?.error?.output?.statusCode
+                    console.log(`🔌 Conexão fechada para ${sessionId}. Status:`, statusCode)
+                    
+                    const shouldReconnectSession = (
+                        statusCode !== DisconnectReason.loggedOut &&
+                        statusCode !== DisconnectReason.forbidden &&
+                        shouldReconnect(sessionId)
+                    )
                     
                     if (shouldReconnectSession) {
-                        createSession(sessionId, isLegacy)
+                        console.log(`🔄 Tentando reconectar sessão ${sessionId}...`)
+                        setTimeout(() => createSession(sessionId, isLegacy), 3000)
                     } else {
+                        console.log(`❌ Sessão ${sessionId} encerrada definitivamente`)
                         deleteSession(sessionId)
                     }
                 } else if (connection === 'open') {
-                    console.log(`Session ${sessionId} connected successfully`)
+                    console.log(`✅ Sessão ${sessionId} conectada com sucesso!`)
+                    retries.delete(sessionId)
+                } else if (connection === 'connecting') {
+                    console.log(`🔄 Conectando sessão ${sessionId}...`)
                 }
             })
 
             sock.ev.on('creds.update', saveCreds)
             
-            // Se não houver QR code em 10 segundos, considerar erro
+            // Se não houver QR code em 30 segundos, considerar erro
             setTimeout(() => {
                 if (!sock.user) {
+                    console.log(`⏰ Timeout para sessão ${sessionId} - QR code não foi gerado`)
                     reject({
                         success: false,
-                        message: 'Timeout: QR code não foi gerado em 10 segundos'
+                        message: 'Timeout: QR code não foi gerado em 30 segundos'
                     })
                 }
-            }, 10000)
+            }, 30000)
             
         } catch (error) {
             console.error('❌ Erro ao criar sessão:', error)
